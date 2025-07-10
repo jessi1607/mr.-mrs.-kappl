@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lena & Franz - 27.09.2025</title>
+<style>
+  body {
+    font-family: 'Georgia', serif;
+    background: white;
+    color: #2a4d23;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh;
+    background: #fff;
+  }
+  header {
+    text-align: center;
+    padding: 20px;
+    color: #b4975a; /* gold */
+  }
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.2rem;
+  }
+  h2 {
+    font-weight: normal;
+    font-style: italic;
+    margin-top: 0; 
+    color: #2a4d23; /* grün */
+  }
+  main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    max-width: 400px;
+    width: 90vw;
+  }
+  video, canvas {
+    border-radius: 12px;
+    border: 2px solid #b4975a;
+    max-width: 100%;
+    height: auto;
+    background: #eee;
+  }
+  #controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button, select {
+    background: #b4975a;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'Georgia', serif;
+  }
+  button:hover, select:hover {
+    background: #8b6e3a;
+  }
+  #message {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #a12727;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lena & Franz - 27.09.2025</h1>
+  <h2>Gemeinsam Hand in Hand ein lebenslang</h2>
+</header>
+<main>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <div id="controls">
+    <select id="cameraSelect"></select>
+    <button id="snapBtn">Foto machen</button>
+    <button id="uploadBtn" disabled>Hochladen</button>
+  </div>
+
+  <div id="message"></div>
+</main>
+
+<script>
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const snapBtn = document.getElementById('snapBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const cameraSelect = document.getElementById('cameraSelect');
+  const message = document.getElementById('message');
+  
+  let currentStream = null;
+  let imageDataURL = null;
+
+  // Dropbox Access Token hier eintragen:
+  const DROPBOX_ACCESS_TOKEN = 'DEIN_ACCESS_TOKEN_HIER';
+
+  async function getCameras() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    cameraSelect.innerHTML = '';
+    videoDevices.forEach((device, i) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.text = device.label || `Kamera ${i + 1}`;
+      cameraSelect.appendChild(option);
+    });
+  }
+
+  async function startCamera(deviceId) {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+    }
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        video: deviceId ? {deviceId: {exact: deviceId}} : {facingMode: 'user'},
+        audio: false
+      });
+      video.srcObject = currentStream;
+    } catch (e) {
+      message.textContent = 'Kamera konnte nicht geöffnet werden: ' + e.message;
+    }
+  }
+
+  cameraSelect.onchange = () => {
+    startCamera(cameraSelect.value);
+  };
+
+  snapBtn.onclick = () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    imageDataURL = canvas.toDataURL('image/jpeg');
+    uploadBtn.disabled = false;
+    message.textContent = 'Foto bereit zum Hochladen';
+  };
+
+  uploadBtn.onclick = async () => {
+    if (!imageDataURL) {
+      message.textContent = 'Bitte zuerst ein Foto machen.';
+      return;
+    }
+    uploadBtn.disabled = true;
+    message.textContent = 'Lade hoch...';
+
+    // Bild aus DataURL in Blob umwandeln
+    function dataURLtoBlob(dataurl) {
+      const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while(n--){
+          u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], {type:mime});
+    }
+
+    const blob = dataURLtoBlob(imageDataURL);
+    const filename = `hochzeit_${Date.now()}.jpg`;
+
+    try {
+      const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
+        method: 'POST',
+        headers: {
+          "Authorization": "Bearer " + DROPBOX_ACCESS_TOKEN,
+          "Dropbox-API-Arg": JSON.stringify({
+            path: '/' + filename,
+            mode: 'add',
+            autorename: true,
+            mute: false,
+            strict_conflict: false
+          }),
+          "Content-Type": "application/octet-stream"
+        },
+        body: blob
+      });
+
+      if (!response.ok) throw new Error(await response.text());
+      message.style.color = 'green';
+      message.textContent = 'Upload erfolgreich!';
+      uploadBtn.disabled = true;
+    } catch (error) {
+      message.style.color = 'red';
+      message.textContent = 'Fehler beim Upload: ' + error.message;
+      uploadBtn.disabled = false;
+    }
+  };
+
+  // Init
+  getCameras().then(() => {
+    if (cameraSelect.options.length > 0) {
+      startCamera(cameraSelect.value);
+    }
+  });
+</script>
+</body>
+</html>
