@@ -6,202 +6,197 @@
 <title>Lena & Franz - 27.09.2025</title>
 <style>
   body {
-    font-family: 'Georgia', serif;
     background: white;
-    color: #2a4d23;
-    margin: 0; padding: 0;
+    font-family: 'Georgia', serif;
+    color: #2a4d2a; /* dunkles grün */
+    margin: 0; padding: 20px;
     display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh;
-    background: #fff;
-  }
-  header {
-    text-align: center;
-    padding: 20px;
-    color: #b4975a; /* gold */
   }
   h1 {
+    color: #a17c00; /* gold */
     font-size: 2.5rem;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0;
   }
-  h2 {
-    font-weight: normal;
+  p.subtitle {
     font-style: italic;
-    margin-top: 0; 
-    color: #2a4d23; /* grün */
+    color: #4a704a;
+    margin-top: 0;
+    margin-bottom: 30px;
   }
-  main {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    max-width: 400px;
-    width: 90vw;
-  }
-  video, canvas {
-    border-radius: 12px;
-    border: 2px solid #b4975a;
-    max-width: 100%;
+  video {
+    border: 4px solid #a17c00;
+    border-radius: 10px;
+    max-width: 100vw;
     height: auto;
-    background: #eee;
   }
-  #controls {
-    margin-top: 15px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
+  canvas {
+    display: none;
   }
-  button, select {
-    background: #b4975a;
+  #photo {
+    margin-top: 20px;
+    max-width: 100vw;
+    border: 4px solid #2a4d2a;
+    border-radius: 10px;
+  }
+  button {
+    background-color: #a17c00;
     color: white;
     border: none;
-    padding: 12px 18px;
-    font-size: 1rem;
     border-radius: 6px;
+    padding: 10px 18px;
+    margin: 10px 5px;
+    font-size: 1rem;
     cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(161, 124, 0, 0.6);
     transition: background-color 0.3s ease;
-    font-family: 'Georgia', serif;
   }
-  button:hover, select:hover {
-    background: #8b6e3a;
+  button:hover {
+    background-color: #8c6700;
   }
   #message {
     margin-top: 15px;
     font-weight: bold;
-    color: #a12727;
+    color: #a17c00;
   }
 </style>
 </head>
 <body>
-<header>
   <h1>Lena & Franz - 27.09.2025</h1>
-  <h2>Gemeinsam Hand in Hand ein lebenlang</h2>
-</header>
-<main>
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
+  <p class="subtitle">Gemeinsam Hand in Hand ein lebenlang</p>
 
-  <div id="controls">
-    <select id="cameraSelect"></select>
-    <button id="snapBtn">Foto machen</button>
-    <button id="uploadBtn" disabled>Hochladen</button>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <div>
+    <button id="frontBtn">Frontkamera</button>
+    <button id="backBtn">Rückkamera</button>
   </div>
 
+  <button id="takePhotoBtn">Foto machen</button>
+  <button id="uploadBtn" disabled>Hochladen</button>
+
+  <img id="photo" alt="Aufgenommenes Foto" />
+
   <div id="message"></div>
-</main>
 
 <script>
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
-  const snapBtn = document.getElementById('snapBtn');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const cameraSelect = document.getElementById('cameraSelect');
+  const photo = document.getElementById('photo');
   const message = document.getElementById('message');
-  
+
   let currentStream = null;
-  let imageDataURL = null;
+  let currentFacingMode = 'user'; // 'user' = front, 'environment' = back
+  let capturedImageBlob = null;
 
-  // Dropbox Access Token hier eintragen:
-  const DROPBOX_ACCESS_TOKEN = 'sl.u.AF09KUWmSCXi7yIlar4UloHwPPVY0PijSB4f49OQzr6tOSIrIY5yL0-mrZtsmDdw8IJhE-AdP05fu_KF74kcr0oy5gYftA93PbIZDr9edKHl1RmhJHAtuL4wrMIH0vmEdWFVe_MFjLAo5hs2tJlyOGBtbqXdSdF5dGA0EESL8f6DU6NSXmFpUqsGoUxhL9Cpfizr-qiKAvo6mPe2mi3h54R4Mp_hreaw_pV1jw8f6tFIZffZeubPr0eKwP_NTEyEX-iXMcMtq4Br4o3Iddv-YA6yLm-n_cWF9s6Jyz0TRuHSffiT6ynPIAe3IK4So464yKAgJz8D1fn3nh96t5x5V9TkD2hvjECiW3D7P8WQqrNBOAQi06OywG0ffn0128vSHzHrEgUyywXt7gZ_J29TAFK5s95JPSdDh75yGDIHm8ncqQ1DoJ27EunY-jQZGHdjjIhErSN8aH-ED6vlSfKxeu72uvAZ2ZaXf3uKMMYdKDBAvrRPCYRzjLNMyVz9WKeOszlpJz-tI-CqAkcnAMmHtwZog52L2Qd3SPeNnoboYyX530_c38bwxRhpJbNZYZP8uNgOUQfqo3nKlai3k5O6Hg3DXI7OVtAeGpBmJGf-ohxtN-ozK6uyc_HNZm9c82e-llDOEBfXHQZhSYgjDcyqH0Mq5YiMXvPMPhiLK5cycYw175SZuvMj5acjPDHIebQTgfmJu0M4n45LKYfOFfe_pCfF7u8NtscIX-J5w3NkPlMuXs35coGjy-Yr3L6b5TdDTUFb0vIDRxt_SML-svPrD3Ln0JdeASSoD3cIHh_PYxFIazy6G_9_uCzkoIIkVN4837WcNVtf7MIMr0itTH31KKCuI6wYYYfO3oGI8gq2lkgonhoC3bVeRAr-RDDn5fic4r5M5Ytto6VRcWYILmallfdUSFZzbEbSWihxBI61V3jciiTyoiuKRUE4wELJsseQ3BOWiKM_6tQkt4s_STWQW8sTquDPE7LJsYGV9dgxqvf-SWG8sadrrFZQ4XIyhlMz0GtxF6m6qy08Sth3jNGHcOQfPpoB2YGfCAb7dhkz6An4ecq8hBgFWjMB2gT0vU1hNz_pz4_S09IXc59UhaBytB1EmGnOTZSoXeq3a69Ni_jO8aECZXPG0Ng5KkwRfI1F1uXUpCQl5Bdy6w6fteBq4I7H1G5O1XiGub0jG3U8tBgfbvFspteWjP7CVgInaYc9Hb_GnladtB31T9TIuzXiczb3UEnZ8jgECbw2OBOb1jTHDtl34p9G5LFTs1b1aI0tBeTwjo2QQgJPHkybyMicb541sECi0szfLzRNGiNwkIZnCQ';
-
-  async function getCameras() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-    cameraSelect.innerHTML = '';
-    videoDevices.forEach((device, i) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.text = device.label || `Kamera ${i + 1}`;
-      cameraSelect.appendChild(option);
-    });
-  }
-
-  async function startCamera(deviceId) {
+  async function startCamera(facingMode) {
     if (currentStream) {
       currentStream.getTracks().forEach(track => track.stop());
     }
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({
-        video: deviceId ? {deviceId: {exact: deviceId}} : {facingMode: 'user'},
+        video: { facingMode: { exact: facingMode } },
         audio: false
       });
       video.srcObject = currentStream;
-    } catch (e) {
-      message.textContent = 'Kamera konnte nicht geöffnet werden: ' + e.message;
+      currentFacingMode = facingMode;
+      message.textContent = '';
+      document.getElementById('uploadBtn').disabled = true;
+      photo.src = '';
+      capturedImageBlob = null;
+    } catch (err) {
+      // Fallback: ohne exact (bei manchen Browsern besser)
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false
+        });
+        video.srcObject = currentStream;
+        currentFacingMode = facingMode;
+        message.textContent = '';
+        document.getElementById('uploadBtn').disabled = true;
+        photo.src = '';
+        capturedImageBlob = null;
+      } catch (error) {
+        console.error('Kamera konnte nicht gestartet werden:', error);
+        message.textContent = 'Kamera konnte nicht gestartet werden. Bitte überprüfe die Berechtigungen.';
+      }
     }
   }
 
-  cameraSelect.onchange = () => {
-    startCamera(cameraSelect.value);
-  };
+  document.getElementById('frontBtn').addEventListener('click', () => startCamera('user'));
+  document.getElementById('backBtn').addEventListener('click', () => startCamera('environment'));
 
-  snapBtn.onclick = () => {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    imageDataURL = canvas.toDataURL('image/jpeg');
-    uploadBtn.disabled = false;
-    message.textContent = 'Foto bereit zum Hochladen';
-  };
-
-  uploadBtn.onclick = async () => {
-    if (!imageDataURL) {
-      message.textContent = 'Bitte zuerst ein Foto machen.';
+  document.getElementById('takePhotoBtn').addEventListener('click', () => {
+    if (!currentStream) {
+      message.textContent = 'Bitte erst Kamera auswählen.';
       return;
     }
-    uploadBtn.disabled = true;
-    message.textContent = 'Lade hoch...';
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, width, height);
+    canvas.toBlob(blob => {
+      capturedImageBlob = blob;
+      photo.src = URL.createObjectURL(blob);
+      document.getElementById('uploadBtn').disabled = false;
+      message.textContent = 'Foto aufgenommen. Jetzt Hochladen klicken.';
+    }, 'image/jpeg', 0.95);
+  });
 
-    // Bild aus DataURL in Blob umwandeln
-    function dataURLtoBlob(dataurl) {
-      const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while(n--){
-          u8arr[n] = bstr.charCodeAt(n);
-      }
-      return new Blob([u8arr], {type:mime});
+  document.getElementById('uploadBtn').addEventListener('click', async () => {
+    if (!capturedImageBlob) {
+      message.textContent = 'Bitte erst ein Foto machen.';
+      return;
     }
 
-    const blob = dataURLtoBlob(imageDataURL);
-    const filename = `hochzeit_${Date.now()}.jpg`;
+    message.textContent = 'Lade Bild hoch...';
+
+    // Dropbox Access Token (bitte mit deinem eigenen Token ersetzen)
+    const DROPBOX_ACCESS_TOKEN = 'sl.u.AF09KUWmSCXi7yIlar4UloHwPPVY0PijSB4f49OQzr6tOSIrIY5yL0-mrZtsmDdw8IJhE-AdP05fu_KF74kcr0oy5gYftA93PbIZDr9edKHl1RmhJHAtuL4wrMIH0vmEdWFVe_MFjLAo5hs2tJlyOGBtbqXdSdF5dGA0EESL8f6DU6NSXmFpUqsGoUxhL9Cpfizr-qiKAvo6mPe2mi3h54R4Mp_hreaw_pV1jw8f6tFIZffZeubPr0eKwP_NTEyEX-iXMcMtq4Br4o3Iddv-YA6yLm-n_cWF9s6Jyz0TRuHSffiT6ynPIAe3IK4So464yKAgJz8D1fn3nh96t5x5V9TkD2hvjECiW3D7P8WQqrNBOAQi06OywG0ffn0128vSHzHrEgUyywXt7gZ_J29TAFK5s95JPSdDh75yGDIHm8ncqQ1DoJ27EunY-jQZGHdjjIhErSN8aH-ED6vlSfKxeu72uvAZ2ZaXf3uKMMYdKDBAvrRPCYRzjLNMyVz9WKeOszlpJz-tI-CqAkcnAMmHtwZog52L2Qd3SPeNnoboYyX530_c38bwxRhpJbNZYZP8uNgOUQfqo3nKlai3k5O6Hg3DXI7OVtAeGpBmJGf-ohxtN-ozK6uyc_HNZm9c82e-llDOEBfXHQZhSYgjDcyqH0Mq5YiMXvPMPhiLK5cycYw175SZuvMj5acjPDHIebQTgfmJu0M4n45LKYfOFfe_pCfF7u8NtscIX-J5w3NkPlMuXs35coGjy-Yr3L6b5TdDTUFb0vIDRxt_SML-svPrD3Ln0JdeASSoD3cIHh_PYxFIazy6G_9_uCzkoIIkVN4837WcNVtf7MIMr0itTH31KKCuI6wYYYfO3oGI8gq2lkgonhoC3bVeRAr-RDDn5fic4r5M5Ytto6VRcWYILmallfdUSFZzbEbSWihxBI61V3jciiTyoiuKRUE4wELJsseQ3BOWiKM_6tQkt4s_STWQW8sTquDPE7LJsYGV9dgxqvf-SWG8sadrrFZQ4XIyhlMz0GtxF6m6qy08Sth3jNGHcOQfPpoB2YGfCAb7dhkz6An4ecq8hBgFWjMB2gT0vU1hNz_pz4_S09IXc59UhaBytB1EmGnOTZSoXeq3a69Ni_jO8aECZXPG0Ng5KkwRfI1F1uXUpCQl5Bdy6w6fteBq4I7H1G5O1XiGub0jG3U8tBgfbvFspteWjP7CVgInaYc9Hb_GnladtB31T9TIuzXiczb3UEnZ8jgECbw2OBOb1jTHDtl34p9G5LFTs1b1aI0tBeTwjo2QQgJPHkybyMicb541sECi0szfLzRNGiNwkIZnCQ';
+
+    // Erstelle FormData für Upload
+    const filename = `LenaFranz_${Date.now()}.jpg`;
 
     try {
       const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
         method: 'POST',
         headers: {
-          "Authorization": "Bearer " + DROPBOX_ACCESS_TOKEN,
-          "Dropbox-API-Arg": JSON.stringify({
+          'Authorization': `Bearer ${DROPBOX_ACCESS_TOKEN}`,
+          'Dropbox-API-Arg': JSON.stringify({
             path: '/' + filename,
             mode: 'add',
             autorename: true,
             mute: false,
-            strict_conflict: false
           }),
-          "Content-Type": "application/octet-stream"
+          'Content-Type': 'application/octet-stream',
         },
-        body: blob
+        body: capturedImageBlob
       });
 
-      if (!response.ok) throw new Error(await response.text());
-      message.style.color = 'green';
-      message.textContent = 'Upload erfolgreich!';
-      uploadBtn.disabled = true;
-    } catch (error) {
-      message.style.color = 'red';
-      message.textContent = 'Fehler beim Upload: ' + error.message;
-      uploadBtn.disabled = false;
-    }
-  };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error_summary || 'Unbekannter Fehler');
+      }
 
-  // Init
-  getCameras().then(() => {
-    if (cameraSelect.options.length > 0) {
-      startCamera(cameraSelect.value);
+      message.textContent = 'Bild erfolgreich hochgeladen. Danke!';
+
+      // Bild nach Upload zurücksetzen
+      photo.src = '';
+      capturedImageBlob = null;
+      document.getElementById('uploadBtn').disabled = true;
+
+    } catch (error) {
+      console.error('Upload-Fehler:', error);
+      message.textContent = 'Fehler beim Hochladen: ' + error.message;
     }
   });
+
+  // Starte standardmäßig mit Frontkamera
+  startCamera('user');
 </script>
 </body>
 </html>
