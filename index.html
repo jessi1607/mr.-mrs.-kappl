@@ -1,100 +1,101 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lena & Franz 27.09.2025</title>
-  <style>
-    body {
-      background: white;
-      font-family: 'Georgia', serif;
-      color: #1e3d1e;
-      margin: 0; padding: 20px;
-      display: flex; flex-direction: column; align-items: center;
-    }
-    h1 {
-      color: #1e3d1e;
-      font-size: 2.5rem;
-      margin-bottom: 0;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lena & Franz - 27.09.2025</title>
+<style>
+  body {
+    background: white;
+    font-family: 'Georgia', serif;
+    color: #2a4d2a;
+    margin: 0; padding: 20px;
+    display: flex; flex-direction: column; align-items: center;
+  }
 
-    #cameraContainer {
-      position: relative;
-      width: 95vw;
-      max-width: 700px;
-      aspect-ratio: 4 / 3;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 20px;
-      background: black;
-      min-height: 400px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  h1 {
+    color: #50C878;
+    font-size: 2.5rem;
+    margin-bottom: 0;
+  }
 
-    video, #photo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 10px;
-      position: absolute;
-      top: 0; left: 0;
-    }
-    video {
-      transform: scaleX(-1);
-      z-index: 5;
-      display: block;
-    }
-    #photo {
-      transform: none !important;
-      z-index: 10;
-      display: none;
-    }
+  #cameraContainer {
+    position: relative;
+    width: 95vw;
+    max-width: 700px;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+    background: black;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    #canvas {
-      display: none;
-    }
+  video, #photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 5;
+  }
 
-    #buttonRow {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin: 15px 0 10px;
-    }
-    button {
-      background-color: #1e3d1e;
-      color: white;
-      border: 2px solid #1e3d1e;
-      border-radius: 6px;
-      padding: 12px 20px;
-      font-size: 1rem;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 2px 5px rgba(30, 61, 30, 0.4);
-      transition: background-color 0.3s ease, color 0.3s ease;
-      min-width: 120px;
-    }
-    button:hover {
-      background-color: #162d16;
-      border-color: #162d16;
-      color: white;
-    }
+  #photo {
+    z-index: 10;
+    display: none;
+  }
 
-    #message {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #a17c00;
-      min-height: 1.2em;
-    }
-    input[type="file"] {
-      display: none;
-    }
-  </style>
+  #canvas {
+    display: none;
+  }
+
+  .buttonRow {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 15px 0 10px;
+    flex-direction: row;
+  }
+
+  button {
+    background-color: #50C878;
+    color: #2a4d2a;
+    border: 2px solid #50C878;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(80, 200, 120, 0.6);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-width: 120px;
+  }
+
+  button:hover {
+    background-color: #3cae68;
+    color: white;
+    border-color: #3cae68;
+  }
+
+  #message {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #2a4d2a;
+    min-height: 1.2em;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+</style>
 </head>
 <body>
-  <h1>Lena & Franz 27.09.2025</h1>
+  <h1>Lena & Franz - 27.09.2025</h1>
 
   <div id="cameraContainer">
     <video id="video" autoplay playsinline></video>
@@ -102,23 +103,22 @@
   </div>
   <canvas id="canvas"></canvas>
 
-  <div id="buttonRow">
+  <div class="buttonRow">
     <button id="frontBtn">Frontkamera</button>
     <button id="backBtn">Rückkamera</button>
   </div>
 
-  <div id="buttonRow">
+  <div class="buttonRow">
     <button id="takePhotoBtn">📸 Foto machen</button>
     <button id="selectImageBtn">🖼 Bild aus Galerie</button>
   </div>
 
-  <div id="buttonRow">  
+  <div class="buttonRow">  
     <button id="uploadBtn" disabled>⬆️ Hochladen</button>
     <button id="saveBtn" disabled>💾 Speichern</button>
   </div>
 
   <input type="file" id="fileInput" accept="image/*" />
-
   <div id="message"></div>
 
 <script>
@@ -136,40 +136,36 @@
     if (currentStream) {
       currentStream.getTracks().forEach(track => track.stop());
     }
+
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { exact: facingMode } },
         audio: false
       });
-      video.srcObject = currentStream;
-      currentFacingMode = facingMode;
-      message.textContent = '';
-      photo.style.display = 'none';
-      video.style.display = 'block';
-      document.getElementById('uploadBtn').disabled = true;
-      document.getElementById('saveBtn').disabled = true;
-      photo.src = '';
-      capturedImageBlob = null;
-    } catch (err) {
+    } catch {
       try {
         currentStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
+          video: { facingMode },
           audio: false
         });
-        video.srcObject = currentStream;
-        currentFacingMode = facingMode;
-        message.textContent = '';
-        photo.style.display = 'none';
-        video.style.display = 'block';
-        document.getElementById('uploadBtn').disabled = true;
-        document.getElementById('saveBtn').disabled = true;
-        photo.src = '';
-        capturedImageBlob = null;
-      } catch (error) {
-        console.error('Kamera konnte nicht gestartet werden:', error);
-        message.textContent = 'Kamera konnte nicht gestartet werden. Bitte überprüfe die Berechtigungen.';
+      } catch (err) {
+        console.error('Kamera konnte nicht gestartet werden:', err);
+        message.textContent = 'Kamera konnte nicht gestartet werden.';
+        return;
       }
     }
+
+    video.srcObject = currentStream;
+
+    video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+    currentFacingMode = facingMode;
+    message.textContent = '';
+    photo.style.display = 'none';
+    video.style.display = 'block';
+    document.getElementById('uploadBtn').disabled = true;
+    document.getElementById('saveBtn').disabled = true;
+    photo.src = '';
+    capturedImageBlob = null;
   }
 
   document.getElementById('frontBtn').addEventListener('click', () => startCamera('user'));
@@ -192,10 +188,7 @@
     }
 
     ctx.drawImage(video, 0, 0, width, height);
-
-    if (currentFacingMode === 'user') {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     canvas.toBlob(blob => {
       capturedImageBlob = blob;
@@ -208,9 +201,7 @@
     }, 'image/jpeg', 0.95);
   });
 
-  document.getElementById('selectImageBtn').addEventListener('click', () => {
-    fileInput.click();
-  });
+  document.getElementById('selectImageBtn').addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
@@ -232,8 +223,8 @@
 
     message.textContent = 'Lade Bild hoch...';
 
-    const DROPBOX_ACCESS_TOKEN = 'sl.u.AF28JNiUxkKlvUSQlmasWQV4D8waexZMGMnF0kIoqAP5yEK7Vb2M6Bdqg1zgvY02wq-BmbmxWser3tSN-6LyLYfuZmPyPGW-kBNi1Nq0m0qlixLkj6hHHD30saXHyre3eVfo45xRlhpR6kkLO8DS2djj09HMemSD_cswFln565tAK7BQ4tmOvmxLgjpYLjyW1qFLqhxfYJsrXD45EilPG7fuF7i6fB5Ov1DyrA5tmHgxXuWPrGUTFzLae1Hxm_16e-WCDht3zduofb7PhSwn-4h8lgxdcJhN9V6-S9tfTIPBhehCjbqnBd4NTCfc0TMTKDiqR6KSw0uzYo15JXMmr-UQqTsSXRdCvDfoD18CUhP4CA8Ky6JWVFTiPmLRc2hvpbcXGURKLAira3dLrY7QuRD4tClhPLBPg6SvMz2hb7GSf6dcZc2VrdNQzQN8jtyTIOb32C9EaslvgKSl63D_-xm-G_6oPxainRZfvyJq_CeBagGEDU6d83VNrsWpdsm0PKj-01RKcfPr3HNhylXpDonH7baVpuhazO90EZvsV30O42W0MdL7EwmEO-sswIqVbJnlFO5dRZvNgZnItzxBmBtFYySBn4IwO_bHk7-pP97csaFUO8bCv5ZYOXC4dwzXJJBxPVwWxBOiI6pf9KHS1YPjv9chdBuWsl2rnfs5079m14C2qiWAf97ezirI5Bo0KP9zXlI2Dyd-8jGO71pds4Q7HLzqW9Xw2YkwVbALif-970AUw6ls-zre_FIjav49GrqZl7oVjAygjfpnEiU3vE1lrf7Ey0UOydVZLDOdmerdxQD-AWNg0NkI7CM2SO251RQb3qBgYB1EUdSK78SSKTeuRsJoNl8MppQUcnRt0B30GT73mi3tLs1MMAjdi3HnJTVjmq4NqxSVAb2fheMwzCbl0BSboX_LCxS6HqxioV5JMpbGdmLA_CBuviXo6zLBz2YoJAQNd6yCHzx_JU0ZoV6rrJxdMKTxnlzcloRYW6G4HS6uaRad1kjo78hKpftTKyHRal1QOeeoNMN_2dikCwMBM6jM2BT_6kO_Qb3o7O6XOdkOcMef8lFQs3uYWYRqRedNcnwuzcPFAB9hAfCysRCT5uDTAPHEY322C6paAyeETMGaFEZQ9WmggZspFM54bmCycjsa5UEceQIJVW7FdFpClX8viOkHLgMyaZaMlZhCr6ppdbsEs4B5womya0-m2KlYYC1KtpCL4Irt-Gchprjxhz3NG5EMxXnkkpLddDFGv8c3osd8QPRqV3lV3QF_CtD9IyOmhBBY4_g_GGYhdo8kDJ3U-J-g9qL-OEKwUkhsSA';
-    const filename = `Lena_Franz_${Date.now()}.jpg`;
+    const DROPBOX_ACCESS_TOKEN = 'sl.u.AF28JNiUxkKlvUSQlmasWQV4D8waexZMGMnF0kIoqAP5yEK7Vb2M6Bdqg1zgvY02wq-BmbmxWser3tSN-6LyLYfuZmPyPGW-kBNi1Nq0m0qlixLkj6hHHD30saXHyre3eVfo45xRlhpR6kkLO8DS2djj09HMemSD_cswFln565tAK7BQ4tmOvmxLgjpYLjyW1qFLqhxfYJsrXD45EilPG7fuF7i6fB5Ov1DyrA5tmHgxXuWPrGUTFzLae1Hxm_16e-WCDht3zduofb7PhSwn-4h8lgxdcJhN9V6-S9tfTIPBhehCjbqnBd4NTCfc0TMTKDiqR6KSw0uzYo15JXMmr-UQqTsSXRdCvDfoD18CUhP4CA8Ky6JWVFTiPmLRc2hvpbcXGURKLAira3dLrY7QuRD4tClhPLBPg6SvMz2hb7GSf6dcZc2VrdNQzQN8jtyTIOb32C9EaslvgKSl63D_-xm-G_6oPxainRZfvyJq_CeBagGEDU6d83VNrsWpdsm0PKj-01RKcfPr3HNhylXpDonH7baVpuhazO90EZvsV30O42W0MdL7EwmEO-sswIqVbJnlFO5dRZvNgZnItzxBmBtFYySBn4IwO_bHk7-pP97csaFUO8bCv5ZYOXC4dwzXJJBxPVwWxBOiI6pf9KHS1YPjv9chdBuWsl2rnfs5079m14C2qiWAf97ezirI5Bo0KP9zXlI2Dyd-8jGO71pds4Q7HLzqW9Xw2YkwVbALif-970AUw6ls-zre_FIjav49GrqZl7oVjAygjfpnEiU3vE1lrf7Ey0UOydVZLDOdmerdxQD-AWNg0NkI7CM2SO251RQb3qBgYB1EUdSK78SSKTeuRsJoNl8MppQUcnRt0B30GT73mi3tLs1MMAjdi3HnJTVjmq4NqxSVAb2fheMwzCbl0BSboX_LCxS6HqxioV5JMpbGdmLA_CBuviXo6zLBz2YoJAQNd6yCHzx_JU0ZoV6rrJxdMKTxnlzcloRYW6G4HS6uaRad1kjo78hKpftTKyHRal1QOeeoNMN_2dikCwMBM6jM2BT_6kO_Qb3o7O6XOdkOcMef8lFQs3uYWYRqRedNcnwuzcPFAB9hAfCysRCT5uDTAPHEY322C6paAyeETMGaFEZQ9WmggZspFM54bmCycjsa5UEceQIJVW7FdFpClX8viOkHLgMyaZaMlZhCr6ppdbsEs4B5womya0-m2KlYYC1KtpCL4Irt-Gchprjxhz3NG5EMxXnkkpLddDFGv8c3osd8QPRqV3lV3QF_CtD9IyOmhBBY4_g_GGYhdo8kDJ3U-J-g9qL-OEKwUkhsSA'; // Bitte einfügen
+    const filename = `LenaFranz_${Date.now()}.jpg`;
 
     try {
       const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
@@ -252,11 +243,11 @@
       });
 
       if (response.ok) {
-        message.style.color = '#1e3d1e';
+        message.style.color = '#2a4d2a';
         message.textContent = 'Bild erfolgreich hochgeladen! Danke!';
       } else {
-        const errData = await response.json();
-        throw new Error(errData.error_summary || 'Unbekannter Fehler');
+        const err = await response.json();
+        throw new Error(err.error_summary || 'Unbekannter Fehler');
       }
     } catch (error) {
       message.style.color = 'red';
