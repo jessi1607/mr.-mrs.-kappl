@@ -105,25 +105,12 @@ let capturedImageBlob = null;
 // Kamera starten
 async function startCamera(facingMode) {
   if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-
   try {
-    currentStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { exact: facingMode } },
-      audio: false
-    });
+    currentStream = await navigator.mediaDevices.getUserMedia({video: { facingMode: { exact: facingMode } }, audio: false});
   } catch {
-    try {
-      currentStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode },
-        audio: false
-      });
-    } catch (err) {
-      console.error('Kamera konnte nicht gestartet werden:', err);
-      message.textContent = 'Kamera konnte nicht gestartet werden.';
-      return;
-    }
+    try { currentStream = await navigator.mediaDevices.getUserMedia({video: { facingMode }, audio: false}); }
+    catch (err) { console.error(err); message.textContent = 'Kamera konnte nicht gestartet werden.'; return; }
   }
-
   video.srcObject = currentStream;
   video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
   currentFacingMode = facingMode;
@@ -150,7 +137,6 @@ document.getElementById('takePhotoBtn').addEventListener('click', () => {
   if (currentFacingMode === 'user') { ctx.translate(width,0); ctx.scale(-1,1); }
   ctx.drawImage(video,0,0,width,height);
   ctx.setTransform(1,0,0,1,0,0);
-
   canvas.toBlob(blob => {
     capturedImageBlob = blob;
     photo.src = URL.createObjectURL(blob);
@@ -176,23 +162,15 @@ fileInput.addEventListener('change', () => {
   message.textContent = 'Bild aus Galerie ausgewählt. Jetzt Hochladen oder Speichern klicken.';
 });
 
-// Upload über die Vercel-API
+// Upload über Vercel-API mit sicherer JSON-Auswertung
 document.getElementById('uploadBtn').addEventListener('click', async () => {
   if (!capturedImageBlob) { message.textContent = 'Bitte erst ein Foto machen oder auswählen.'; return; }
-
   message.textContent = 'Lade Bild hoch...';
-
   try {
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: capturedImageBlob
-    });
-
-    // Wichtig: nur JSON auslesen, wenn tatsächlich was zurückkommt
+    const response = await fetch("/api/upload", { method: "POST", body: capturedImageBlob });
     const text = await response.text();
     let result = {};
     try { result = JSON.parse(text); } catch {}
-
     if (result.success) {
       message.style.color = '#2a4d2a';
       message.textContent = 'Bild erfolgreich hochgeladen!';
@@ -214,7 +192,7 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   a.click();
 });
 
-// Optional: code aus URL für Exchange API abfangen (nur einmal nötig, falls du refresh_token holen willst)
+// Optional: code aus URL für Exchange API abfangen (nur einmal nötig)
 const urlParams = new URLSearchParams(window.location.search);
 const code = urlParams.get("code");
 if (code) {
@@ -228,4 +206,3 @@ startCamera('user');
 </script>
 </body>
 </html>
-
