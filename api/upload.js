@@ -7,10 +7,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Access Token vom Refresh Token holen
+    // 1️⃣ Frisches Access Token vom Refresh Token holen
     const refreshToken = process.env.DROPBOX_REFRESH_TOKEN;
     const clientId = process.env.DROPBOX_APP_KEY;
     const clientSecret = process.env.DROPBOX_APP_SECRET;
+
+    if (!refreshToken || !clientId || !clientSecret) {
+      throw new Error("Umgebungsvariablen fehlen: DROPBOX_REFRESH_TOKEN, APP_KEY, APP_SECRET");
+    }
 
     const tokenResponse = await fetch("https://api.dropbox.com/oauth2/token", {
       method: "POST",
@@ -24,10 +28,15 @@ export default async function handler(req, res) {
     });
 
     const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
-    if (!accessToken) throw new Error("Kein Access Token erhalten.");
+    console.log("Dropbox Token Response:", tokenData);
 
-    // 2. Datei vom Frontend entgegennehmen
+    if (!tokenData.access_token) {
+      throw new Error("Kein Access Token erhalten: " + JSON.stringify(tokenData));
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // 2️⃣ Datei vom Client entgegennehmen
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
@@ -36,7 +45,7 @@ export default async function handler(req, res) {
 
     const filename = `LenaFranz_${Date.now()}.jpg`;
 
-    // 3. Upload zu Dropbox
+    // 3️⃣ Upload zu Dropbox
     const uploadResponse = await fetch("https://content.dropboxapi.com/2/files/upload", {
       method: "POST",
       headers: {
@@ -52,14 +61,16 @@ export default async function handler(req, res) {
       body: fileBuffer,
     });
 
+    const uploadText = await uploadResponse.text();
+    console.log("Dropbox Upload Response:", uploadText);
+
     if (!uploadResponse.ok) {
-      const text = await uploadResponse.text();
-      throw new Error("Dropbox Upload fehlgeschlagen: " + text);
+      throw new Error("Dropbox-Upload fehlgeschlagen: " + uploadText);
     }
 
-    res.status(200).json({ success: true, filename });
+    res.status(200).json({ success: true, filename, rawDropboxResponse: uploadText });
   } catch (err) {
-    console.error(err);
+    console.error("Upload API Error:", err);
     res.status(500).json({ error: err.message });
   }
 }
