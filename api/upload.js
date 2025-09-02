@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Frisches Access Token vom Refresh Token holen
+    // 1. Access Token vom Refresh Token holen
     const refreshToken = process.env.DROPBOX_REFRESH_TOKEN;
     const clientId = process.env.DROPBOX_APP_KEY;
     const clientSecret = process.env.DROPBOX_APP_SECRET;
@@ -25,10 +25,9 @@ export default async function handler(req, res) {
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
-
     if (!accessToken) throw new Error("Kein Access Token erhalten.");
 
-    // 2. Datei vom Client entgegennehmen
+    // 2. Datei vom Frontend entgegennehmen
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
@@ -54,8 +53,8 @@ export default async function handler(req, res) {
     });
 
     if (!uploadResponse.ok) {
-      const err = await uploadResponse.text();
-      throw new Error("Dropbox-Upload fehlgeschlagen: " + err);
+      const text = await uploadResponse.text();
+      throw new Error("Dropbox Upload fehlgeschlagen: " + text);
     }
 
     res.status(200).json({ success: true, filename });
