@@ -102,106 +102,111 @@ let currentStream = null;
 let currentFacingMode = 'user';
 let capturedImageBlob = null;
 
-// Kamera starten
+// --- Dropbox Credentials ---
+const DROPBOX_REFRESH_TOKEN = "hPbaMzF_PPwAAAAAAAAAAVLY0yJnsYxOoWH0RIuixW-19iztORTYQTyBbNSYZuj1";
+const DROPBOX_APP_KEY = "bqtnuo0pptbtwh2";
+const DROPBOX_APP_SECRET = "n5ftqwpsa0nz4mb";
+
+// --- Kamera starten ---
 async function startCamera(facingMode) {
   if (currentStream) currentStream.getTracks().forEach(track => track.stop());
   try {
-    currentStream = await navigator.mediaDevices.getUserMedia({video: { facingMode: { exact: facingMode } }, audio: false});
+    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode } }, audio: false });
   } catch {
-    try { currentStream = await navigator.mediaDevices.getUserMedia({video: { facingMode }, audio: false}); }
+    try { currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false }); } 
     catch (err) { console.error(err); message.textContent = 'Kamera konnte nicht gestartet werden.'; return; }
   }
   video.srcObject = currentStream;
-  video.style.transform = (facingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+  video.style.transform = (facingMode==='user')?'scaleX(-1)':'scaleX(1)';
   currentFacingMode = facingMode;
-  message.textContent = '';
-  photo.style.display = 'none';
-  video.style.display = 'block';
-  document.getElementById('uploadBtn').disabled = true;
-  document.getElementById('saveBtn').disabled = true;
-  photo.src = '';
-  capturedImageBlob = null;
+  message.textContent=''; photo.style.display='none'; video.style.display='block';
+  document.getElementById('uploadBtn').disabled=true; document.getElementById('saveBtn').disabled=true;
+  photo.src=''; capturedImageBlob=null;
 }
 
-document.getElementById('frontBtn').addEventListener('click', () => startCamera('user'));
-document.getElementById('backBtn').addEventListener('click', () => startCamera('environment'));
+document.getElementById('frontBtn').addEventListener('click',()=>startCamera('user'));
+document.getElementById('backBtn').addEventListener('click',()=>startCamera('environment'));
 
-// Foto aufnehmen
-document.getElementById('takePhotoBtn').addEventListener('click', () => {
-  if (!currentStream) { message.textContent = 'Bitte erst Kamera auswählen.'; return; }
-  const width = video.videoWidth;
-  const height = video.videoHeight;
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (currentFacingMode === 'user') { ctx.translate(width,0); ctx.scale(-1,1); }
-  ctx.drawImage(video,0,0,width,height);
-  ctx.setTransform(1,0,0,1,0,0);
-  canvas.toBlob(blob => {
-    capturedImageBlob = blob;
-    photo.src = URL.createObjectURL(blob);
-    photo.style.display = 'block';
-    video.style.display = 'none';
-    document.getElementById('uploadBtn').disabled = false;
-    document.getElementById('saveBtn').disabled = false;
-    message.textContent = 'Foto aufgenommen. Jetzt Hochladen oder Speichern klicken.';
-  }, 'image/jpeg', 0.95);
+// --- Foto aufnehmen ---
+document.getElementById('takePhotoBtn').addEventListener('click',()=>{
+  if(!currentStream){message.textContent='Bitte erst Kamera auswählen.'; return;}
+  const w=video.videoWidth, h=video.videoHeight;
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  if(currentFacingMode==='user'){ctx.translate(w,0); ctx.scale(-1,1);}
+  ctx.drawImage(video,0,0,w,h); ctx.setTransform(1,0,0,1,0,0);
+  canvas.toBlob(blob=>{
+    capturedImageBlob=blob;
+    photo.src=URL.createObjectURL(blob);
+    photo.style.display='block'; video.style.display='none';
+    document.getElementById('uploadBtn').disabled=false;
+    document.getElementById('saveBtn').disabled=false;
+    message.textContent='Foto aufgenommen. Jetzt Hochladen oder Speichern klicken.';
+  },'image/jpeg',0.95);
 });
 
-// Bild aus Galerie
-document.getElementById('selectImageBtn').addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-  capturedImageBlob = file;
-  photo.src = URL.createObjectURL(file);
-  photo.style.display = 'block';
-  video.style.display = 'none';
-  document.getElementById('uploadBtn').disabled = false;
-  document.getElementById('saveBtn').disabled = false;
-  message.textContent = 'Bild aus Galerie ausgewählt. Jetzt Hochladen oder Speichern klicken.';
+// --- Bild aus Galerie ---
+document.getElementById('selectImageBtn').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',()=>{
+  const file=fileInput.files[0]; if(!file) return;
+  capturedImageBlob=file;
+  photo.src=URL.createObjectURL(file);
+  photo.style.display='block'; video.style.display='none';
+  document.getElementById('uploadBtn').disabled=false;
+  document.getElementById('saveBtn').disabled=false;
+  message.textContent='Bild aus Galerie ausgewählt. Jetzt Hochladen oder Speichern klicken.';
 });
 
-// Upload über Vercel-API mit sicherer JSON-Auswertung
-document.getElementById('uploadBtn').addEventListener('click', async () => {
-  if (!capturedImageBlob) { message.textContent = 'Bitte erst ein Foto machen oder auswählen.'; return; }
-  message.textContent = 'Lade Bild hoch...';
-  try {
-    const response = await fetch("/api/upload", { method: "POST", body: capturedImageBlob });
-    const text = await response.text();
-    let result = {};
-    try { result = JSON.parse(text); } catch {}
-    if (result.success) {
-      message.style.color = '#2a4d2a';
-      message.textContent = 'Bild erfolgreich hochgeladen!';
-    } else {
-      throw new Error(result.error || "Unbekannter Fehler");
-    }
-  } catch (error) {
-    message.style.color = 'red';
-    message.textContent = 'Fehler beim Upload: ' + error.message;
-  }
+// --- Access Token vom Refresh Token ---
+async function getAccessToken(){
+  const resp=await fetch("https://api.dropbox.com/oauth2/token",{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:new URLSearchParams({
+      grant_type:"refresh_token",
+      refresh_token:DROPBOX_REFRESH_TOKEN,
+      client_id:DROPBOX_APP_KEY,
+      client_secret:DROPBOX_APP_SECRET
+    })
+  });
+  const data=await resp.json();
+  if(!data.access_token) throw new Error("Kein Access Token erhalten");
+  return data.access_token;
+}
+
+// --- Upload direkt zu Dropbox ---
+document.getElementById('uploadBtn').addEventListener('click',async()=>{
+  if(!capturedImageBlob){message.textContent='Bitte erst ein Foto machen oder auswählen.'; return;}
+  message.textContent='Lade Bild hoch...';
+  try{
+    const accessToken=await getAccessToken();
+    const filename=`LenaFranz_${Date.now()}.jpg`;
+    const response=await fetch("https://content.dropboxapi.com/2/files/upload",{
+      method:"POST",
+      headers:{
+        "Authorization":`Bearer ${accessToken}`,
+        "Dropbox-API-Arg":JSON.stringify({path:"/"+filename,mode:"add",autorename:true,mute:false}),
+        "Content-Type":"application/octet-stream"
+      },
+      body:capturedImageBlob
+    });
+    const text=await response.text(); let result={};
+    try{result=JSON.parse(text);}catch{}
+    if(result.name){message.style.color='#2a4d2a'; message.textContent='Bild erfolgreich hochgeladen!';}
+    else throw new Error(result.error_summary||"Unbekannter Fehler");
+  }catch(err){message.style.color='red'; message.textContent='Fehler beim Upload: '+err.message;}
 });
 
-// Bild lokal speichern
-document.getElementById('saveBtn').addEventListener('click', () => {
-  if (!capturedImageBlob) { message.textContent = 'Bitte erst ein Foto machen oder auswählen.'; return; }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(capturedImageBlob);
-  a.download = `LenaFranz_${Date.now()}.jpg`;
+// --- Bild lokal speichern ---
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  if(!capturedImageBlob){message.textContent='Bitte erst ein Foto machen oder auswählen.'; return;}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(capturedImageBlob);
+  a.download=`LenaFranz_${Date.now()}.jpg`;
   a.click();
 });
 
-// Optional: code aus URL für Exchange API abfangen (nur einmal nötig)
-const urlParams = new URLSearchParams(window.location.search);
-const code = urlParams.get("code");
-if (code) {
-  fetch(`/api/exchange-code?code=${code}`)
-    .then(res => res.json())
-    .then(data => console.log("Refresh Token erhalten:", data.refresh_token))
-    .catch(err => console.error(err));
-}
-
+// --- Kamera starten ---
 startCamera('user');
 </script>
 </body>
